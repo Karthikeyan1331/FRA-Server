@@ -3,6 +3,7 @@ const userRegister=require("./UserRegister")
 const app=require("../app");
 const { secureHeapUsed } = require('crypto');
 const sendEmail = require('./email');
+const dataFunction = require('./function')
 const buildRegexConditions = (fields, searchMessage) => {
     return fields.map(field => ({
         [field]: { $in: searchMessage.map(substring => new RegExp(substring, 'i')) }
@@ -38,7 +39,7 @@ async function register_user(userCredential,req,res){
         user.tokenizer = tokenizer;
         console.log(tokenizer)
         await user.save();
-        await sendEmail(email, tokenizer);
+        await sendEmail(user);
         // await userModel.findOneAndDelete({ email: userCredential.email });
         //Code the email sender here
         res.status(201).cookie('Token', tokenizer, {
@@ -139,6 +140,56 @@ const ServerCall = async (collection, data) => {
             maxAge: 24*60*60*1000
         })
         return res.send('cookie has been set!')
+    })
+    //Re-Send Email to user
+    app.post('/api/VerifyUser', async (req, res)=>{
+        try{
+            const userCredential = req.body.token;
+            console.log(userCredential)
+            const verified = await dataFunction.verifyUser(userCredential)
+            if(verified.success==true){
+                res.status(201).json({success:true})
+            }
+            else{
+                console.log(verified.message)
+            }
+        }   
+        catch(error){
+            console.error(error)
+        }
+    })
+    app.post('/api/UserLogin', async (req, res)=>{
+        try{
+            const { email, password } = req.body;
+            const result = await dataFunction.checkUserIdPassword(email, password)
+            if(!result.status)
+            {
+                res.status(201).json({success:false, message:result.message})
+            }
+            else{
+                res.status(201).json({success:true})
+            }
+        }
+        catch(error){
+             console.log(error)
+        }
+    })
+    app.post('/api/reSendMail', async (req,res)=>{
+        try{
+            const userCredential = req.body.user;
+            console.log(userCredential)
+            let result = await dataFunction.checkEmailVerified(userCredential.email)
+            
+            if(!result){
+                await sendEmail(userCredential);
+                res.status(201).json({success:true, userCredential})}
+            else{
+                res.status(201).json({success:false, message:'Login'})
+            }
+        }
+        catch (error){
+
+        }
     })
     //User_Send
     app.post('/api/Login', async (req, res) => {
