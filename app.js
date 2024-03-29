@@ -7,11 +7,24 @@ const express=require('express')
 const app=express()
 const body=require('body-parser');
 const cookieParser = require('cookie-parser')
+const session =require('express-session')
+app.use(cors({
+  origin: ['http://localhost:3000'],
+  methods:['POST','GET'], // Replace this with the origin of your frontend application
+  credentials: true // Allow credentials (cookies)
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(body.json());
-app.use(cors({
-  origin: 'http://localhost:3000', // Replace this with the origin of your frontend application
-  credentials: true // Allow credentials (cookies)
-}));
+app.use(session({
+  secret: 'kathiresan',
+  saveUninitialized:false,
+  resave: true,
+  rolling:true,
+  cookie:{
+    secure:false,
+    maxAge:1000*60*60*24
+  }
+}))
+
 module.exports=app;

@@ -78,6 +78,15 @@ const ServerCall = async (collection, data) => {
             res.status(400).json({ error: 'Invalid message' });
         }
     });
+    app.post('/ValidToken', (req,res)=>{
+        console.log(req.session,'here')
+        if(req.session.username){
+            return res.json({valid:true, message:req.session.username})
+        }
+        else{
+            return res.json({valid:false, message:"wasted"})
+        }
+    })
     //Search default
     app.post('/api/search', async (req, res) => {
         let searchMessage = req.body.message; 
@@ -167,7 +176,9 @@ const ServerCall = async (collection, data) => {
                 res.status(201).json({success:false, message:result.message})
             }
             else{
-                res.status(201).json({success:true})
+                req.session.username=email
+                console.log(req.session.username)
+                res.status(201).json({success:true,message:req.session.username})
             }
         }
         catch(error){
@@ -179,7 +190,6 @@ const ServerCall = async (collection, data) => {
             const userCredential = req.body.user;
             console.log(userCredential)
             let result = await dataFunction.checkEmailVerified(userCredential.email)
-            
             if(!result){
                 await sendEmail(userCredential);
                 res.status(201).json({success:true, userCredential})}
