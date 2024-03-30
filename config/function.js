@@ -22,7 +22,7 @@ class CommanFunction {
             }
         }
         else{
-            return {status:false, message:"EmailId is incorrect"}
+            return {status:false, message:"This emailId cannot existed"}
         }
     }
     async checkEmailVerified(email){

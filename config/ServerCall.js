@@ -68,12 +68,8 @@ const ServerCall = async (collection, data) => {
         const { message } = req.body;
 
         if (message === 'hello') {
-            const responses = data.slice(0, 20).map(async (a) => {
-                return a;
-            });
-
-            const result = await Promise.all(responses);
-            res.json(result);
+            const responses1 = await collection.find({}).skip(0).limit(20).toArray()
+            res.json(responses1);
         } else {
             res.status(400).json({ error: 'Invalid message' });
         }
@@ -89,15 +85,11 @@ const ServerCall = async (collection, data) => {
     })
     //Search default
     app.post('/api/search', async (req, res) => {
-        let searchMessage = req.body.message; 
-    
+        let {message, currentPage, perPage} = req.body; 
+        let searchMessage=message
         if (searchMessage === 'search') {
-            const responses = data.slice(0, 20).map(async (a) => {
-                return a;
-            });
-    
-            let result = await Promise.all(responses);
-            res.json(result);
+            const responses = await collection.find({}).skip((currentPage - 1) * perPage).limit(perPage).toArray()
+            res.json(responses);
         } else {
             // Convert to array if it's a string
             if (typeof searchMessage === 'string') {
@@ -135,12 +127,10 @@ const ServerCall = async (collection, data) => {
                 const matchesB = countMatchesForField(b, 'TranslatedRecipeName', searchMessage);
                 return matchesB - matchesA;
             });
-            const responses1 = searchResult.slice(0, 20).map(async (a) => {
+            const responses1 = searchResult.slice(0, 20).map((a) => {
                 return a;
             });
-    
-            let result = await Promise.all(responses1);
-            res.json(result);
+            res.json(responses1);
         }
     });
 
