@@ -4,6 +4,8 @@ const app = require("../app");
 const { secureHeapUsed } = require('crypto');
 const sendEmail = require('./email');
 const dataFunction = require('./function')
+const signInWithGoogle = require('./signWithGoogle');
+const passport = require("passport")
 const buildRegexConditions = (fields, searchMessage) => {
     return fields.map(field => ({
         [field]: { $in: searchMessage.map(substring => new RegExp(substring, 'i')) }
@@ -178,6 +180,38 @@ const ServerCall = async (collection, data) => {
             console.log(error)
         }
     })
+    app.post('/api/SignInWithGoogle', async (req, res) => {
+        signInWithGoogle.signWithgoogle(req, res)
+    })
+    // POST route to fetch Google Client ID
+    app.post('/getGoogleClientId', (req, res) => {
+        res.json({ Client_ID: process.env.GOOGLE_CLIENT_ID });
+    });
+
+    // GET route for Google OAuth2 authentication
+    app.get("/auth/google", passport.authenticate("google", ["profile", "email"]));
+
+    // Google OAuth2 callback route
+    app.get("/auth/google/callback", passport.authenticate("google", {
+        successRedirect: "/login/success", // Redirect to success page after authentication
+        failureRedirect: "/login/failure"  // Redirect to failure page if authentication fails
+    }));
+
+    // Success route after Google OAuth2 authentication
+    app.get("/login/success", (req, res) => {
+        if (req.user) {
+            // User is authenticated, you can handle success logic here
+            res.json({ success: true, user: req.user });
+        } else {
+            res.status(403).json({ error: true, message: "Not Authorized" });
+        }
+    });
+
+    // Failure route after Google OAuth2 authentication
+    app.get("/login/failure", (req, res) => {
+        res.status(401).json({ error: true, message: "Login failure" });
+    });
+
     app.post('/api/reSendMail', async (req, res) => {
         try {
             const userCredential = req.body.user;

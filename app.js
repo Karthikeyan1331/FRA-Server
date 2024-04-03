@@ -8,11 +8,14 @@ const app=express()
 const body=require('body-parser');
 const cookieParser = require('cookie-parser')
 const session =require('express-session')
+const passport = require("passport")
+const passportSetup = require("./config/passport")
 app.use(cors({
   origin: ['http://localhost:3000'],
   methods:['POST','GET'], // Replace this with the origin of your frontend application
   credentials: true // Allow credentials (cookies)
 }));
+
 app.use(cookieParser());
 app.use(express.json());
 app.use(body.json());
@@ -26,5 +29,6 @@ app.use(session({
     maxAge:1000*60*60*24
   }
 }))
-
+app.use(passport.initialize())
+app.use(passport.session())
 module.exports=app;
