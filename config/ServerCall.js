@@ -10,6 +10,39 @@ const ServerCall = async (collection, data) => {
     const port = 8000;
 
     //.Carosel home
+    app.post('/api/FoodInstruction', async(req, res)=>{
+        if(req.body.id){
+            let data = await dataFunction.foodInstructionData(req.body.id)
+            res.status(200).json(data)
+        }
+        else{
+            res.status(400).json({message:"I can't get the FoodId"})
+        }
+    })
+    
+    //Liked routes
+
+    app.post('/api/UserLiked', async(req, res)=>{
+        if(req.body.id){
+            let data = await dataFunction.userLikedNot(req.body.id,true,req)
+            console.log(data,"output")
+            res.status(200).json({existed:data})
+        }
+        else{
+            res.status(400).json({message:"I can't get the FoodId"})
+        }
+    })
+    app.post('/api/getAboutLike', async(req, res)=>{
+        
+        if(req.body.id){
+            let data = await dataFunction.getFoodLikes(req.body.id,req)
+            
+            res.json({count:data[0], existed:data[1]})
+        }   
+        else{
+            res.status(400).json({message:"I can't get the FoodId"})
+        }
+    })
     app.post('/api/hello', async (req, res) => {
         const { message } = req.body;
 
