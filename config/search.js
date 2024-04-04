@@ -32,7 +32,7 @@ class SearchAlgorithm {
             }
 
             const fieldsToSearch = ['TranslatedRecipeName', 'Cuisine', 'Course', 'Diet']; // Add more fields as needed
-            const orConditions = buildRegexConditions(fieldsToSearch, searchMessage);
+            const orConditions = this.buildRegexConditions(fieldsToSearch, searchMessage);
 
             const count = await collection.countDocuments({
                 $or: orConditions,
@@ -61,8 +61,8 @@ class SearchAlgorithm {
             }
             // Move the recipes with more matches in 'TranslatedRecipeName' to the top
             searchResult.sort((a, b) => {
-                const matchesA = countMatchesForField(a, 'TranslatedRecipeName', searchMessage);
-                const matchesB = countMatchesForField(b, 'TranslatedRecipeName', searchMessage);
+                const matchesA = this.countMatchesForField(a, 'TranslatedRecipeName', searchMessage);
+                const matchesB = this.countMatchesForField(b, 'TranslatedRecipeName', searchMessage);
                 return matchesB - matchesA;
             });
             const responses1 = searchResult.slice((currentPage - 1) * perPage, ((currentPage - 1) * perPage) + perPage).map((a) => {
