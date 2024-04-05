@@ -10,39 +10,86 @@ const ServerCall = async (collection, data) => {
     const port = 8000;
 
     //.Carosel home
-    app.post('/api/FoodInstruction', async(req, res)=>{
-        if(req.body.id){
+    app.post('/api/FoodInstruction', async (req, res) => {
+        if (req.body.id) {
             let data = await dataFunction.foodInstructionData(req.body.id)
             res.status(200).json(data)
         }
-        else{
-            res.status(400).json({message:"I can't get the FoodId"})
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
         }
     })
-    
+
     //Liked routes
 
-    app.post('/api/UserLiked', async(req, res)=>{
-        if(req.body.id){
-            let data = await dataFunction.userLikedNot(req.body.id,true,req)
-            console.log(data,"output")
-            res.status(200).json({existed:data})
+    app.post('/api/UserLiked', async (req, res) => {
+        if (req.body.id) {
+            let data = await dataFunction.userLikedNot(req.body.id, true, req, 'FoodLikes')
+            console.log(data, "output")
+            res.status(200).json({ existed: data })
         }
-        else{
-            res.status(400).json({message:"I can't get the FoodId"})
-        }
-    })
-    app.post('/api/getAboutLike', async(req, res)=>{
-        
-        if(req.body.id){
-            let data = await dataFunction.getFoodLikes(req.body.id,req)
-            
-            res.json({count:data[0], existed:data[1]})
-        }   
-        else{
-            res.status(400).json({message:"I can't get the FoodId"})
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
         }
     })
+    app.post('/api/getAboutLike', async (req, res) => {
+
+        if (req.body.id) {
+            let data = await dataFunction.getFoodLikes(req.body.id, req, 'FoodLikes')
+
+            res.json({ count: data[0], existed: data[1] })
+        }
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
+        }
+    })
+    //Bookmark
+    app.post('/api/UserBookMarked', async (req, res) => {
+        if (req.body.id) {
+            let data = await dataFunction.userLikedNot(req.body.id, req.body.onClickBook, req, 'FoodBookmark')
+            console.log(data, "output")
+            res.status(200).json({ existed: data })
+        }
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
+        }
+    })
+    //Comments
+    app.post('/api/InstructionsComments', async (req, res) => {
+        if (req.body.id) {
+            let data = await dataFunction.getFoodComments(req.body.id, req)
+            console.log(data, "Comments")
+            res.status(200).json({ data })
+        }
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
+        }
+    })
+    app.post('/api/InsertComments', async (req, res) => {
+        if (req.body.id && req.session.email) {
+            let data = await dataFunction.setFoodUserComments(req.body.id, req.body.comments, req)
+            res.status(200).json({ data })
+        }
+        else {
+            res.status(400).json({ message: "Need to Have Food_id and User_email" })
+        }
+    })
+    //Report
+    app.post('/api/sendReport', async (req, res) => {
+        console.log("shit")
+        if (req.body.idValue && req.session.email) {
+            console.log(req.body)
+            let data = await dataFunction.sendReport(req)
+            if (data)
+                res.status(200).json({ status: true, message: "Successfully filed your Complain" })
+            else
+                res.status(400).json({ status: true, message: "your Complain not filed" })
+        }
+        else {
+            res.status(400).json({ message: "Need to Have Food_id and User_email" })
+        }
+    })
+
     app.post('/api/hello', async (req, res) => {
         const { message } = req.body;
 
@@ -63,7 +110,7 @@ const ServerCall = async (collection, data) => {
     })
     //Search default
     app.post('/api/search', async (req, res) => {
-        await searchClass.searchData(req,res,collection)
+        await searchClass.searchData(req, res, collection)
     });
 
     app.get('/cookie', (req, res) => {
@@ -104,7 +151,6 @@ const ServerCall = async (collection, data) => {
             console.log(error)
         }
     })
-    
 
     // GET route for Google OAuth2 authentication
     app.get("/auth/google", passport.authenticate("google", ["profile", "email"]));
@@ -168,7 +214,7 @@ const ServerCall = async (collection, data) => {
         }
     });
 
-    
+
     app.post('/logout', async (req, res) => {
         req.session.destroy((err) => {
             if (err) {

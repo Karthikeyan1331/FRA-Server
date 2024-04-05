@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const client = new MongoClient("mongodb://127.0.0.1:27017");
 const userModel = require('./models/userModel')
 const mongoose = require('mongoose');
+const FoodComment = require('./models/comments')
 class CommanFunction {
     async main(dbname, collectionname) {
         await client.connect();
@@ -34,15 +35,15 @@ class CommanFunction {
         item['_id']]
         return arr;
     }
-    //Likes
-    async userLikedNot(id, onclick, req) {
-        const collection = await this.main('FoodRecipeDB', 'FoodLikes');
+    //Likes And Bookmark
+    async userLikedNot(id, onclick, req, FoodCollection) {
+        const collection = await this.main('FoodRecipeDB', FoodCollection);
         const objectId = new mongoose.Types.ObjectId(id);
         let existed = false;
-    
+
         if (req.session.email) {
             const user = await collection.findOne({ food_id: objectId, email_id: req.session.email });
-    
+
             if (!onclick) {
                 existed = !!user; // Convert user to a boolean value
                 return existed; // Return the existing like status
@@ -51,7 +52,7 @@ class CommanFunction {
                     // User already liked the item, so unlike it
                     existed = false;
                     await collection.deleteOne({ food_id: objectId, email_id: req.session.email });
-                    console.log(existed,onclick,"remove")
+                    console.log(existed, onclick, "remove")
                     return existed;
                 } else {
                     // User didn't like the item, so like it
@@ -61,22 +62,88 @@ class CommanFunction {
                         created_date: new Date()
                     });
                     existed = true; // User now likes the item
-                    console.log(existed,onclick,"add")
+                    console.log(existed, onclick, "add")
                     return existed;
                 }
             }
         }
-         // Return the updated like status
+        // Return the updated like status
     }
-    async getFoodLikes(id, req) {
-        const collection = await this.main('FoodRecipeDB', 'FoodLikes');
+    //likes
+    async getFoodLikes(id, req, FoodCollection) {
+        const collection = await this.main('FoodRecipeDB', FoodCollection);
         // Convert the string id to ObjectId using mongoose.Types.ObjectId
         const objectId = new mongoose.Types.ObjectId(id);
         // Find the document based on the converted ObjectId
         const count = await collection.countDocuments({ food_id: objectId });
-        const existed = await this.userLikedNot(id, false, req) 
+        const existed = await this.userLikedNot(id, false, req, FoodCollection)
         return [count, existed]
     }
+
+    // Comments
+
+    async getFoodComments(id, req) {
+        const collection = await this.main('FoodRecipeDB', 'FoodComment');
+        const objectId = new mongoose.Types.ObjectId(id);
+        const comments = await collection.find({ Food_id: objectId }).toArray()
+        console.log(comments)
+        const count = comments.length
+        let likedComments = []
+        if (count > 0 && req.session.email) {
+            const user = req.session.email
+            likedComments = await collection.find({ Food_id: objectId, likes: { $in: [user] } }).toArray();
+        }
+        return [comments, likedComments]
+    }
+    async setFoodUserComments(id, comment, req) {
+        if (req.session.email) {
+            try {
+                const { email } = req.session;
+                const objectId = new mongoose.Types.ObjectId(id);
+                const newComment = new FoodComment({
+                    Food_id:objectId,
+                    Food_Comment: comment,
+                    User_email_id: email,
+                    likes: [],
+                    dislikes: [],
+                    created_date: new Date().toISOString() // Format date as YYYY-MM-DDTHH:mm:ss.sssZ
+                });
+                const savedComment = await newComment.save();
+                console.log('Comment saved:', savedComment);
+                return this.getFoodComments(id, req); // Return the saved comment if needed
+            } catch (error) {
+                console.error('Error saving comment:', error);
+                throw error; // Throw the error for handling in the calling function
+            }
+        }
+        else{
+            return {status:212}
+        }
+    }
+    //sendReport
+        async sendReport(req){
+            const { idValue, typeOfReport, foodName, complain } = req.body;
+            const collection = await this.main('FoodRecipeDB', 'FoodReportByUser');
+            const email_id = req.session.email
+            try {
+                // Insert the report data into the collection
+                const result = await collection.insertOne({
+                    Food_id: idValue,
+                    Food_name:foodName,
+                    User_email_id: email_id,
+                    TypeReport:typeOfReport,
+                    Problem:complain,
+                    created_date: new Date()
+                });
+                console.log('Report inserted:', result.insertedId);
+                return true; // Return the inserted document ID if needed
+            } catch (error) {
+                console.log('Error inserting report:', error);
+                return false; // Throw the error for handling in the caller function
+            }
+            
+        }
+
     async checkUserIdPassword(email, password) {
         const collection = await this.main('FoodRecipeDB', 'UserCredential');
         const user = await collection.findOne({ email: email });
@@ -138,8 +205,8 @@ class CommanFunction {
                     message: "EmailExisted"
                 });
             }
-    
-    
+
+
             const user = await userModel.create({
                 firstName,
                 lastName,
@@ -161,7 +228,7 @@ class CommanFunction {
                 { user, success: true }
             )
             // Remove the response sending from here
-    
+
         }
         catch (error) {
             await userModel.findOneAndDelete({ email: userCredential.email });
