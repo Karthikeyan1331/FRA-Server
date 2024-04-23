@@ -1,5 +1,5 @@
 const { MongoClient } = require('mongodb');
-const bcrypt=require('bcrypt');
+const bcrypt = require('bcrypt');
 const client = new MongoClient("mongodb://127.0.0.1:27017");
 const axios = require("axios");
 const userModel = require('./models/userModel')
@@ -13,15 +13,18 @@ class SignInWithGoogle {
         const password = details.sub;
         const verification = details.email_verified;
         const picture = details.picture;
-    
+
         try {
             const existingUser = await userModel.findOne({ email });
+
             if (existingUser) {
-                dataFunction.setSessionLogin(req, {firstName:firstName, lastName:lastName, email:email, picture:picture, verification:verification})
+                existingUser.verification = verification
+                const t=await existingUser.save();
+                dataFunction.setSessionLogin(req, t)
                 res.redirect("http://localhost:3000");
                 return
             }
-    
+
             // Create a new user if not already existing
             const user = await userModel.create({
                 firstName,
@@ -29,14 +32,14 @@ class SignInWithGoogle {
                 email,
                 password,
                 verification,
-                profile: picture,
             });
-            
+
             const tokenizer = user.getJwtToken();
             user.tokenizer = tokenizer;
-            await user.save();
+            const t= await user.save();
+            console.log(t)
             console.log(tokenizer);
-            dataFunction.setSessionLogin(req, {firstName:firstName, lastName:lastName, email:email, picture:picture, verification:verification})
+            dataFunction.setSessionLogin(req, t)
             res.redirect("http://localhost:3000");
         } catch (error) {
             console.error(error);
@@ -45,7 +48,7 @@ class SignInWithGoogle {
                 message: "INTERNAL SERVER ERROR"
             });
         }
-    }    
+    }
 }
 let obj = new SignInWithGoogle()
 module.exports = obj

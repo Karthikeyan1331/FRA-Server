@@ -2,9 +2,13 @@ const app = require("../app");
 const { secureHeapUsed } = require('crypto');
 const sendEmail = require('./email');
 const dataFunction = require('./function')
+const fileUpload = require('./fileUpload');
 const signInWithGoogle = require('./signWithGoogle');
 const passport = require("passport")
 const searchClass = require("./search")
+const EditFunction = require("./method/editUserdata")
+app.use('/Editprofile', fileUpload);
+
 
 const ServerCall = async (collection, data) => {
     const port = 8000;
@@ -213,7 +217,18 @@ const ServerCall = async (collection, data) => {
             res.status(500).json({ success: false, message: 'Internal Server Error' });
         }
     });
-
+    app.post('/EditUserData', async (req, res) => {
+        try {
+            let data = await EditFunction.editFunction(req)
+            if(data[0]){
+                res.status(200).json({data:data[1], message:"success"})
+            } else {
+                res.status(201).json({data:data[0], message:"failure"})
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    })
 
     app.post('/logout', async (req, res) => {
         req.session.destroy((err) => {

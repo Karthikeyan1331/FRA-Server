@@ -86,6 +86,11 @@ class CommanFunction {
         const collection = await this.main('FoodRecipeDB', 'FoodComment');
         const objectId = new mongoose.Types.ObjectId(id);
         const comments = await collection.find({ Food_id: objectId }).toArray()
+        let i=0
+        for(let a of comments){
+            const profile = await userModel.findOne({email:a["User_email_id"]})
+            comments[i]['profile'] = profile['profile']
+        }
         console.log(comments)
         const count = comments.length
         let likedComments = []

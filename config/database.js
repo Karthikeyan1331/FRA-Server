@@ -1,12 +1,8 @@
 // database.js
 
 const { MongoClient } = require('mongodb');
-const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const ServerCall=require('./ServerCall')
 const mongoose = require('mongoose')
-
 let collection;  // Declare collection outside the function scope
 
 const connectDatabase = async () => {
