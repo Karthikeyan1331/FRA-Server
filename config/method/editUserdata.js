@@ -1,10 +1,10 @@
 const userModel = require('../models/userModel')
-const FunctionData = require("../function")
+const dataFunction = require("../function")
 class EditUserData {
-    async editFunction(req){
-        const {firstName, lastName, gender, state, country, dob} = req.body
-        const {_id} = req.session.data
-        const user = await userModel.findById({_id})
+    async editFunction(req) {
+        const { firstName, lastName, gender, state, country, dob } = req.body
+        const { _id } = req.user_data
+        const user = await userModel.findById({ _id })
         user.firstName = firstName
         user.lastName = lastName
         user.gender = gender
@@ -12,11 +12,13 @@ class EditUserData {
         user.country = country
         user.dob = dob
         const t = await user.save()
-        FunctionData.setSessionLogin(req, t)
-        if(t){
+        const token = dataFunction.createJWTtoken(req, t)
+        const dataD = { ...t._doc, tokenD: token }
+        dataFunction.setSessionLogin(req, dataD)
+        if (t) {
             return [true, t]
         }
-        else{
+        else {
             return [false, []]
         }
     }

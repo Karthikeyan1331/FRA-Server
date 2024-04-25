@@ -4,6 +4,12 @@ const client = new MongoClient("mongodb://127.0.0.1:27017");
 const axios = require("axios");
 const userModel = require('./models/userModel')
 const dataFunction = require('./function')
+const cookieOptions = {
+    maxAge: 24 * 60 * 60 * 1000, // 1 day in milliseconds
+    httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+    sameSite: 'strict', // Restricts the cookie to same-site requests
+    secure: true, // Ensures the cookie is sent only over HTTPS
+};
 class SignInWithGoogle {
     async signWithGoogle(req, res) {
         const details = req.user._json;
@@ -19,8 +25,10 @@ class SignInWithGoogle {
 
             if (existingUser) {
                 existingUser.verification = verification
-                const t=await existingUser.save();
-                dataFunction.setSessionLogin(req, t)
+                const t = await existingUser.save();
+                const token = dataFunction.createJWTtoken(req, t)
+                const dataD = { ...t._doc, tokenD: token }
+                dataFunction.setSessionLogin(req, dataD)
                 res.redirect("http://localhost:3000");
                 return
             }
@@ -36,10 +44,12 @@ class SignInWithGoogle {
 
             const tokenizer = user.getJwtToken();
             user.tokenizer = tokenizer;
-            const t= await user.save();
+            const t = await user.save();
             console.log(t)
             console.log(tokenizer);
-            dataFunction.setSessionLogin(req, t)
+            const token = dataFunction.createJWTtoken(req, t)
+            const dataD = { ...t._doc, tokenD: token }
+            dataFunction.setSessionLogin(req, dataD)
             res.redirect("http://localhost:3000");
         } catch (error) {
             console.error(error);

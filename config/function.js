@@ -5,6 +5,8 @@ const client = new MongoClient("mongodb://127.0.0.1:27017");
 const userModel = require('./models/userModel')
 const mongoose = require('mongoose');
 const FoodComment = require('./models/comments')
+const FoodViews = require("./models/FoodViews")
+const jwt = require('jsonwebtoken')
 class CommanFunction {
     async main(dbname, collectionname) {
         await client.connect();
@@ -13,9 +15,16 @@ class CommanFunction {
         return collection;
     }
     setSessionLogin(req, data) {
+        console.log("shoit", data)
         req.session.email = data.email
         req.session.data = data
         console.log(req.session)
+    }
+    createJWTtoken(req, data) {
+        let token = jwt.sign({ data: data }, process.env.secret, {
+            expiresIn: '7d'
+        })
+        return token
     }
     async foodInstructionData(id) {
         const collection = await this.main('FoodRecipeDB', 'FoodRecipe');
@@ -35,14 +44,32 @@ class CommanFunction {
         item['_id']]
         return arr;
     }
+    //Recent Views
+    async userViewedFood(food_id, req) {
+        try {
+            if (req.user_data) {
+                let email_id = req.user_data.email
+                await FoodViews.deleteMany({ email_id, food_id })
+                const newFoodView = new FoodViews({ email_id, food_id });
+                const add = await newFoodView.save();
+                console.log(add)
+                if (add) {
+                    return [true, add]
+                }
+                return [false, add]
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
     //Likes And Bookmark
     async userLikedNot(id, onclick, req, FoodCollection) {
         const collection = await this.main('FoodRecipeDB', FoodCollection);
         const objectId = new mongoose.Types.ObjectId(id);
         let existed = false;
 
-        if (req.session.email) {
-            const user = await collection.findOne({ food_id: objectId, email_id: req.session.email });
+        if (req.user_data.email) {
+            const user = await collection.findOne({ food_id: objectId, email_id: req.user_data.email });
 
             if (!onclick) {
                 existed = !!user; // Convert user to a boolean value
@@ -51,14 +78,14 @@ class CommanFunction {
                 if (user) {
                     // User already liked the item, so unlike it
                     existed = false;
-                    await collection.deleteOne({ food_id: objectId, email_id: req.session.email });
+                    await collection.deleteOne({ food_id: objectId, email_id: req.user_data.email });
                     console.log(existed, onclick, "remove")
                     return existed;
                 } else {
                     // User didn't like the item, so like it
                     await collection.insertOne({
                         food_id: objectId,
-                        email_id: req.session.email,
+                        email_id: req.user_data.email,
                         created_date: new Date()
                     });
                     existed = true; // User now likes the item
@@ -86,27 +113,27 @@ class CommanFunction {
         const collection = await this.main('FoodRecipeDB', 'FoodComment');
         const objectId = new mongoose.Types.ObjectId(id);
         const comments = await collection.find({ Food_id: objectId }).toArray()
-        let i=0
-        for(let a of comments){
-            const profile = await userModel.findOne({email:a["User_email_id"]})
+        let i = 0
+        for (let a of comments) {
+            const profile = await userModel.findOne({ email: a["User_email_id"] })
             comments[i]['profile'] = profile['profile']
         }
         console.log(comments)
         const count = comments.length
         let likedComments = []
-        if (count > 0 && req.session.email) {
-            const user = req.session.email
+        if (count > 0 && req.user_data.email) {
+            const user = req.user_data.email
             likedComments = await collection.find({ Food_id: objectId, likes: { $in: [user] } }).toArray();
         }
         return [comments, likedComments]
     }
     async setFoodUserComments(id, comment, req) {
-        if (req.session.email) {
+        if (req.user_data.email) {
             try {
-                const { email } = req.session;
+                const { email } = req.user_data;
                 const objectId = new mongoose.Types.ObjectId(id);
                 const newComment = new FoodComment({
-                    Food_id:objectId,
+                    Food_id: objectId,
                     Food_Comment: comment,
                     User_email_id: email,
                     likes: [],
@@ -121,33 +148,33 @@ class CommanFunction {
                 throw error; // Throw the error for handling in the calling function
             }
         }
-        else{
-            return {status:212}
+        else {
+            return { status: 212 }
         }
     }
     //sendReport
-        async sendReport(req){
-            const { idValue, typeOfReport, foodName, complain } = req.body;
-            const collection = await this.main('FoodRecipeDB', 'FoodReportByUser');
-            const email_id = req.session.email
-            try {
-                // Insert the report data into the collection
-                const result = await collection.insertOne({
-                    Food_id: idValue,
-                    Food_name:foodName,
-                    User_email_id: email_id,
-                    TypeReport:typeOfReport,
-                    Problem:complain,
-                    created_date: new Date()
-                });
-                console.log('Report inserted:', result.insertedId);
-                return true; // Return the inserted document ID if needed
-            } catch (error) {
-                console.log('Error inserting report:', error);
-                return false; // Throw the error for handling in the caller function
-            }
-            
+    async sendReport(req) {
+        const { idValue, typeOfReport, foodName, complain } = req.body;
+        const collection = await this.main('FoodRecipeDB', 'FoodReportByUser');
+        const email_id = req.user_data.email
+        try {
+            // Insert the report data into the collection
+            const result = await collection.insertOne({
+                Food_id: idValue,
+                Food_name: foodName,
+                User_email_id: email_id,
+                TypeReport: typeOfReport,
+                Problem: complain,
+                created_date: new Date()
+            });
+            console.log('Report inserted:', result.insertedId);
+            return true; // Return the inserted document ID if needed
+        } catch (error) {
+            console.log('Error inserting report:', error);
+            return false; // Throw the error for handling in the caller function
         }
+
+    }
 
     async checkUserIdPassword(email, password) {
         const collection = await this.main('FoodRecipeDB', 'UserCredential');

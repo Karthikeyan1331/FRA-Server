@@ -7,11 +7,59 @@ const signInWithGoogle = require('./signWithGoogle');
 const passport = require("passport")
 const searchClass = require("./search")
 const EditFunction = require("./method/editUserdata")
+const status = require("./middleware/status")
+const History = require("./History")
 app.use('/Editprofile', fileUpload);
-
-
 const ServerCall = async (collection, data) => {
     const port = 8000;
+    // History
+    app.post('/api/HistoryBookmaks', status, async (req, res) => {
+        try {
+            console.log("Superman")
+            let data = await History.bookmarks(req)
+            if (data[0]) {
+                res.status(200).json({ data: data[1], message: true })
+            }
+            else {
+                res.status(201).json({ data: data[1], message: false })
+            }
+
+        }
+        catch (error) {
+            console.log(error)
+            res.status(500).json({ error })
+        }
+    })
+    app.post('/api/HistoryLikes', status, async (req, res) => {
+        try {
+            let data = await History.likes(req)
+            if (data[0]) {
+                res.status(200).json({ data: data[1], message: true })
+            }
+            else
+                res.status(201).json({ data: data[1], message: false })
+
+        }
+        catch (error) {
+            console.log(error)
+            res.status(500).json({ error })
+        }
+    })
+    app.post('/api/HistoryViews', status, async (req, res) => {
+        try {
+            let data = await History.views(req)
+            if (data[0]) {
+                res.status(200).json({ data: data[1], message: true })
+            }
+            else
+                res.status(201).json({ data: data[1], message: false })
+
+        }
+        catch (error) {
+            console.log(error)
+            res.status(500).json({ error })
+        }
+    })
 
     //.Carosel home
     app.post('/api/FoodInstruction', async (req, res) => {
@@ -26,7 +74,7 @@ const ServerCall = async (collection, data) => {
 
     //Liked routes
 
-    app.post('/api/UserLiked', async (req, res) => {
+    app.post('/api/UserLiked', status, async (req, res) => {
         if (req.body.id) {
             let data = await dataFunction.userLikedNot(req.body.id, true, req, 'FoodLikes')
             console.log(data, "output")
@@ -36,7 +84,7 @@ const ServerCall = async (collection, data) => {
             res.status(400).json({ message: "I can't get the FoodId" })
         }
     })
-    app.post('/api/getAboutLike', async (req, res) => {
+    app.post('/api/getAboutLike', status, async (req, res) => {
 
         if (req.body.id) {
             let data = await dataFunction.getFoodLikes(req.body.id, req, 'FoodLikes')
@@ -47,8 +95,21 @@ const ServerCall = async (collection, data) => {
             res.status(400).json({ message: "I can't get the FoodId" })
         }
     })
+    //Views
+    app.post('/api/FoodViews', status, async (req, res) => {
+        if (req.body.id) {
+            let data = await dataFunction.userViewedFood(req.body.id, req)
+            if (data[0])
+                res.status(200).json(data[1])
+            else
+                res.status(201).json([])
+        }
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
+        }
+    })
     //Bookmark
-    app.post('/api/UserBookMarked', async (req, res) => {
+    app.post('/api/UserBookMarked', status, async (req, res) => {
         if (req.body.id) {
             let data = await dataFunction.userLikedNot(req.body.id, req.body.onClickBook, req, 'FoodBookmark')
             console.log(data, "output")
@@ -59,7 +120,7 @@ const ServerCall = async (collection, data) => {
         }
     })
     //Comments
-    app.post('/api/InstructionsComments', async (req, res) => {
+    app.post('/api/InstructionsComments', status, async (req, res) => {
         if (req.body.id) {
             let data = await dataFunction.getFoodComments(req.body.id, req)
             console.log(data, "Comments")
@@ -69,8 +130,8 @@ const ServerCall = async (collection, data) => {
             res.status(400).json({ message: "I can't get the FoodId" })
         }
     })
-    app.post('/api/InsertComments', async (req, res) => {
-        if (req.body.id && req.session.email) {
+    app.post('/api/InsertComments', status, async (req, res) => {
+        if (req.body.id) {
             let data = await dataFunction.setFoodUserComments(req.body.id, req.body.comments, req)
             res.status(200).json({ data })
         }
@@ -79,9 +140,9 @@ const ServerCall = async (collection, data) => {
         }
     })
     //Report
-    app.post('/api/sendReport', async (req, res) => {
+    app.post('/api/sendReport', status, async (req, res) => {
         console.log("shit")
-        if (req.body.idValue && req.session.email) {
+        if (req.body.idValue) {
             console.log(req.body)
             let data = await dataFunction.sendReport(req)
             if (data)
@@ -217,13 +278,13 @@ const ServerCall = async (collection, data) => {
             res.status(500).json({ success: false, message: 'Internal Server Error' });
         }
     });
-    app.post('/EditUserData', async (req, res) => {
+    app.post('/EditUserData', status, async (req, res) => {
         try {
             let data = await EditFunction.editFunction(req)
-            if(data[0]){
-                res.status(200).json({data:data[1], message:"success"})
+            if (data[0]) {
+                res.status(200).json({ data: data[1], message: "success" })
             } else {
-                res.status(201).json({data:data[0], message:"failure"})
+                res.status(201).json({ data: data[0], message: "failure" })
             }
         } catch (error) {
             console.log(error)
