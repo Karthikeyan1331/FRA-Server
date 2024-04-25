@@ -6,6 +6,7 @@ const userModel = require('./models/userModel')
 const mongoose = require('mongoose');
 const FoodComment = require('./models/comments')
 const FoodViews = require("./models/FoodViews")
+const FoodRecipeDBC = require("./models/FoodRecipe")
 const jwt = require('jsonwebtoken')
 class CommanFunction {
     async main(dbname, collectionname) {
@@ -26,7 +27,13 @@ class CommanFunction {
         })
         return token
     }
-    async foodInstructionData(id) {
+    async foodInstructionData(req, id) {
+        if (req.user_data) {
+            const item = await FoodRecipeDBC.findById({ _id: id })
+            if (item)
+                return item
+            return []
+        }
         const collection = await this.main('FoodRecipeDB', 'FoodRecipe');
         // Convert the string id to ObjectId using mongoose.Types.ObjectId
         const objectId = new mongoose.Types.ObjectId(id);

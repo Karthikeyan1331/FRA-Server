@@ -43,15 +43,24 @@ const foodRecipeSchema = new mongoose.Schema({
     },
     URL: {
         type: String,
-        required: true
+        default:null
     },
     Image: {
         type: String,
+        default: null
+    },
+    approve:{
+        type: Number,
+        default: 0
+    },
+    created_by:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'UserCredential', // Reference to the Food collection
         required: true
     },
-    id: {
-        type: Number,
-        default:0,
+    created_on: {
+        type: Date,
+        default: Date.now
     }
 });
 

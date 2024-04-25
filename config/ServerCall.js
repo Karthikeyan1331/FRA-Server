@@ -3,19 +3,39 @@ const { secureHeapUsed } = require('crypto');
 const sendEmail = require('./email');
 const dataFunction = require('./function')
 const fileUpload = require('./fileUpload');
+const fileUploadFood = require('./fileUploadFood')
 const signInWithGoogle = require('./signWithGoogle');
 const passport = require("passport")
 const searchClass = require("./search")
 const EditFunction = require("./method/editUserdata")
 const status = require("./middleware/status")
 const History = require("./History")
+const Dashboard = require("./Dashboard")
 app.use('/Editprofile', fileUpload);
+app.use('/AddEditFood', fileUploadFood)
 const ServerCall = async (collection, data) => {
     const port = 8000;
+    //Create Dashboard
+    app.post('/api/myFood', status, async (req, res) => {
+        try {
+            let data = await Dashboard.collectMyFood(req)
+            if (data[0]) {
+                res.status(200).json(data[1])
+            }
+            else {
+                res.status(201).json({ data: data[1], message: false })
+            }
+
+        }
+        catch (error) {
+            console.log(error)
+            res.status(500).json({ error })
+        }
+
+    })
     // History
     app.post('/api/HistoryBookmaks', status, async (req, res) => {
         try {
-            console.log("Superman")
             let data = await History.bookmarks(req)
             if (data[0]) {
                 res.status(200).json({ data: data[1], message: true })
@@ -64,7 +84,28 @@ const ServerCall = async (collection, data) => {
     //.Carosel home
     app.post('/api/FoodInstruction', async (req, res) => {
         if (req.body.id) {
-            let data = await dataFunction.foodInstructionData(req.body.id)
+            let data = await dataFunction.foodInstructionData(req, req.body.id)
+            res.status(200).json(data)
+        }
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
+        }
+    })
+
+    app.post('/EditFoodGetData', status, async (req, res) => {
+        if (req.body.id) {
+            let data = await dataFunction.foodInstructionData(req, req.body.id)
+            console.log(data)
+            res.status(200).json(data)
+        }
+        else {
+            res.status(400).json({ message: "I can't get the FoodId" })
+        }
+    })
+    app.post('/Delete_Food', status, async (req, res) => {
+        if (req.body._id) {
+            let data = await Dashboard.deleteFood(req)
+            console.log(data)
             res.status(200).json(data)
         }
         else {

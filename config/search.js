@@ -15,15 +15,15 @@ class SearchAlgorithm {
         }
         return count;
     }
-    async searchData(req,res,collection){
+    async searchData(req, res, collection) {
         console.log("you are inside the search")
         let { message, currentPage, perPage } = req.body;
         console.log(message, currentPage, perPage)
         let searchMessage = message
         if (searchMessage === 'search') {
             console.log(searchMessage)
-            const responses = await collection.find({}).skip((currentPage - 1) * perPage).limit(perPage).toArray()
-            const count = await collection.countDocuments();
+            const responses = await collection.find({ approve: 1 }).skip((currentPage - 1) * perPage).limit(perPage).toArray()
+            const count = await collection.countDocuments({ approve: 1 });
             res.json({ datavalue: responses, totalCount: count });
         } else {
             // Convert to array if it's a string
@@ -35,10 +35,10 @@ class SearchAlgorithm {
             const orConditions = this.buildRegexConditions(fieldsToSearch, searchMessage);
 
             const count = await collection.countDocuments({
-                $or: orConditions,
+                $or: orConditions, approve: 1
             });
             const searchResult = await collection.find({
-                $or: orConditions,
+                $or: orConditions, approve: 1
             }).toArray();
 
             // Sort the search results based on the number of matches

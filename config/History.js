@@ -4,6 +4,16 @@ const FoodBookmark = require('./models/FoodBookmark')
 const FoodLikes = require('./models/FoodLikes')
 const FoodViews = require("./models/FoodViews")
 class History {
+    sortedbyDate(food){
+        return food.sort((a, b) => {
+            // Convert the created_date strings to Date objects
+            const dateA = new Date(a.created_date);
+            const dateB = new Date(b.created_date);
+            
+            // Sort in descending order based on the date
+            return dateB - dateA;
+        });
+    }
     async getAllRecipe(data) {
         let arr = []
         for (let i of data) {
@@ -19,6 +29,7 @@ class History {
             if (req.user_data) {
                 let email_id = req.user_data.email
                 let food = await FoodBookmark.find({ email_id })
+                food = this.sortedbyDate(food)
                 let arr = await this.getAllRecipe(food)
                 if (arr.length > 0) {
                     return [true, arr]
@@ -36,6 +47,7 @@ class History {
             if (req.user_data) {
                 let email_id = req.user_data.email
                 let food = await FoodLikes.find({ email_id })
+                food = this.sortedbyDate(food)
                 let arr = await this.getAllRecipe(food)
                 if (arr.length > 0) {
                     return [true, arr]
@@ -52,6 +64,7 @@ class History {
             if (req.user_data) {
                 let email_id = req.user_data.email
                 let food = await FoodViews.find({ email_id })
+                food = this.sortedbyDate(food)
                 let arr = await this.getAllRecipe(food)
                 if (arr.length > 0) {
                     return [true, arr]
