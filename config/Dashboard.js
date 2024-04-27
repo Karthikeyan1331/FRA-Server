@@ -2,6 +2,7 @@
 const FoodRecipe = require('./models/FoodRecipe')
 const FoodBookmark = require('./models/FoodBookmark')
 const FoodLikes = require('./models/FoodLikes')
+const FoodReportByUser = require('./models/FoodReportByUser')
 const FoodViews = require("./models/FoodViews")
 const FoodDB = require("./models/FoodRecipe")
 const mongoose = require('mongoose');
@@ -27,8 +28,8 @@ class Dashboard {
             let { TranslatedRecipeName, TranslatedIngredients, PrepTimeInMins, CookTimeInMins,
                 Servings, Cuisine, Course, Diet, TranslatedInstructions, Image, _id } = data;
             console.log(TranslatedRecipeName, TranslatedIngredients, PrepTimeInMins, CookTimeInMins,
-                 Servings, Cuisine, Course, Diet, TranslatedInstructions, Image, _id)
-            let URL = Image, TotalTimeInMins = PrepTimeInMins + CookTimeInMins
+                Servings, Cuisine, Course, Diet, TranslatedInstructions, Image, _id)
+            let URL = Image, TotalTimeInMins = Number(PrepTimeInMins) + Number(CookTimeInMins)
             console.log(URL, TotalTimeInMins)
             let created_by = new mongoose.Types.ObjectId(_id)
             console.log(created_by)
@@ -73,6 +74,8 @@ class Dashboard {
                 food_id = null,
                 approve = null } = data
             URL = Image
+            approve = 0
+            TotalTimeInMins = Number(PrepTimeInMins) + Number(CookTimeInMins)
             const query = Object.fromEntries(
                 Object.entries({
                     TranslatedRecipeName,
@@ -109,7 +112,7 @@ class Dashboard {
     }
     async deleteFood(req) {
         try {
-            let _id = req.body._id; 
+            let _id = req.body._id;
             // Check if _id is a valid ObjectId
             if (!mongoose.Types.ObjectId.isValid(_id)) {
                 throw new Error('Invalid ObjectId');
@@ -117,9 +120,10 @@ class Dashboard {
 
             // Delete the food record
             let deletedFood = await FoodRecipe.deleteOne({ _id: _id });
-            await FoodViews.deleteMany({food_id:_id})
-            await FoodLikes.deleteMany({food_id:_id})
-            await FoodBookmark.deleteMany({food_id:_id})
+            await FoodViews.deleteMany({ food_id: _id })
+            await FoodLikes.deleteMany({ food_id: _id })
+            await FoodBookmark.deleteMany({ food_id: _id })
+            await FoodReportByUser.deleteMany({ Food_id: _id })
 
             if (deletedFood.deletedCount > 0) {
                 return [true, deletedFood];

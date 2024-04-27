@@ -8,6 +8,7 @@ const FoodComment = require('./models/comments')
 const FoodViews = require("./models/FoodViews")
 const FoodRecipeDBC = require("./models/FoodRecipe")
 const jwt = require('jsonwebtoken')
+const FoodReportByUser = require("./models/FoodReportByUser")
 class CommanFunction {
     async main(dbname, collectionname) {
         await client.connect();
@@ -161,12 +162,12 @@ class CommanFunction {
     }
     //sendReport
     async sendReport(req) {
-        const { idValue, typeOfReport, foodName, complain } = req.body;
-        const collection = await this.main('FoodRecipeDB', 'FoodReportByUser');
-        const email_id = req.user_data.email
+        let { idValue, typeOfReport, foodName, complain } = req.body;
+        const email_id = req.user_data.email;
+        idValue = new mongoose.Types.ObjectId(idValue)
         try {
-            // Insert the report data into the collection
-            const result = await collection.insertOne({
+            // Create a new FoodReportByUser document
+            const report = new FoodReportByUser({
                 Food_id: idValue,
                 Food_name: foodName,
                 User_email_id: email_id,
@@ -174,13 +175,15 @@ class CommanFunction {
                 Problem: complain,
                 created_date: new Date()
             });
-            console.log('Report inserted:', result.insertedId);
-            return true; // Return the inserted document ID if needed
+    
+            // Save the report document to the database
+            const savedReport = await report.save();
+            console.log('Report inserted:', savedReport._id);
+            return true; // Return true if the report was successfully inserted
         } catch (error) {
             console.log('Error inserting report:', error);
-            return false; // Throw the error for handling in the caller function
+            return false; // Return false if there was an error inserting the report
         }
-
     }
 
     async checkUserIdPassword(email, password) {

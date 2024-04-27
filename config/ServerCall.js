@@ -11,10 +11,92 @@ const EditFunction = require("./method/editUserdata")
 const status = require("./middleware/status")
 const History = require("./History")
 const Dashboard = require("./Dashboard")
+const Admin = require("./Admin")
 app.use('/Editprofile', fileUpload);
 app.use('/AddEditFood', fileUploadFood)
 const ServerCall = async (collection, data) => {
     const port = 8000;
+    // Admin Req dude
+    app.post('/api/FetchAllRport', status, async (req, res) => {
+        if (req.user_data && req.user_data.admin) {
+            try {
+                let data = await Admin.fetchReport(req)
+                if (data[0]) {
+                    res.status(200).json(data[1])
+                }
+                else {
+                    res.status(201).json({ data: data[1], message: false })
+                }
+            }
+            catch (error) {
+                console.log(error)
+                res.status(500).json({ error })
+            }
+        }
+        else {
+            res.status(404).json({ error: "You are not a Admin" })
+        }
+    })
+    app.post('/api/FetchAllFoodWaiting', status, async (req, res) => {
+        if (req.user_data && req.user_data.admin) {
+            try {
+                let data = await Admin.fetchFoodInWaiting(req)
+                if (data[0]) {
+                    res.status(200).json(data[1])
+                }
+                else {
+                    res.status(201).json({ data: data[1], message: false })
+                }
+            }
+            catch (error) {
+                console.log(error)
+                res.status(500).json({ error })
+            }
+        }
+        else {
+            res.status(404).json({ error: "You are not a Admin" })
+        }
+    })
+    app.post('/api/Approve', status, async (req, res) => {
+        if (req.user_data && req.user_data.admin) {
+            try {
+                let data = await Admin.ApproveFood(req)
+                if (data[0]) {
+                    res.status(200).json(data[1])
+                }
+                else {
+                    res.status(201).json({ data: data[1], message: false })
+                }
+            }
+            catch (error) {
+                console.log(error)
+                res.status(500).json({ error })
+            }
+        }
+        else {
+            res.status(404).json({ error: "You are not a Admin" })
+        }
+    })
+    app.post('/api/Reject', status, async (req, res) => {
+        if (req.user_data && req.user_data.admin) {
+            try {
+                let data = await Admin.RejectFood(req)
+                if (data[0]) {
+                    res.status(200).json(data[1])
+                }
+                else {
+                    res.status(201).json({ data: data[1], message: false })
+                }
+            }
+            catch (error) {
+                console.log(error)
+                res.status(500).json({ error })
+            }
+        }
+        else {
+            res.status(404).json({ error: "You are not a Admin" })
+        }
+    })
     //Create Dashboard
     app.post('/api/myFood', status, async (req, res) => {
         try {
