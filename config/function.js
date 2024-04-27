@@ -9,6 +9,7 @@ const FoodViews = require("./models/FoodViews")
 const FoodRecipeDBC = require("./models/FoodRecipe")
 const jwt = require('jsonwebtoken')
 const FoodReportByUser = require("./models/FoodReportByUser")
+const sendMail = require("./email")
 class CommanFunction {
     async main(dbname, collectionname) {
         await client.connect();
@@ -175,7 +176,7 @@ class CommanFunction {
                 Problem: complain,
                 created_date: new Date()
             });
-    
+
             // Save the report document to the database
             const savedReport = await report.save();
             console.log('Report inserted:', savedReport._id);
@@ -186,14 +187,16 @@ class CommanFunction {
         }
     }
 
-    async checkUserIdPassword(email, password) {
-        const collection = await this.main('FoodRecipeDB', 'UserCredential');
-        const user = await collection.findOne({ email: email });
+    async checkUserIdPassword(req, email, password) {
+        console.log("shit")
+        const user = await userModel.findOne({ email: email });
         if (user) {
             if (user.verification) {
-                const isPasswordCorrect = await bcrypt.compare(password, user.password);
+                const isPasswordCorrect = bcrypt.compare(password, user.password);
                 if (isPasswordCorrect) {
-                    this.setSessionLogin(req, { firstName: user.firstName, lastName: user.lastName, email: user.email, picture: null, verification: user.verification })
+                    const token = this.createJWTtoken(req, user)
+                    const dataD = { ...user._doc, tokenD: token }
+                    this.setSessionLogin(req, dataD)
                     return { status: true }
                 }
                 else {
@@ -257,9 +260,11 @@ class CommanFunction {
             })
             const tokenizer = user.getJwtToken();
             user.tokenizer = tokenizer;
-            console.log(tokenizer)
+
+            
             await user.save();
-            await sendEmail(user);
+            console.log(tokenizer)
+            await sendMail(user);
             // await userModel.findOneAndDelete({ email: userCredential.email });
             //Code the email sender here
             res.status(201).cookie('Token', tokenizer, {

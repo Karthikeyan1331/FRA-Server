@@ -327,7 +327,7 @@ const ServerCall = async (collection, data) => {
     app.post('/api/UserLogin', async (req, res) => {
         try {
             const { email, password } = req.body;
-            const result = await dataFunction.checkUserIdPassword(email, password)
+            const result = await dataFunction.checkUserIdPassword(req, email, password)
             if (!result.status) {
                 res.status(201).json({ success: false, message: result.message })
             }
@@ -393,7 +393,7 @@ const ServerCall = async (collection, data) => {
                 await dataFunction.register_user(userCredential, req, res);
             }
             else {
-                console.log("world was fucked")
+                console.log("world fucks up")
             }
         } catch (error) {
             // Handle any errors that occur during the request processing
