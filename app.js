@@ -11,7 +11,7 @@ const session =require('express-session')
 const passport = require("passport")
 const passportSetup = require("./config/passport")
 app.use(cors({
-  origin: ['http://localhost:3000'],
+  origin: ['http://localhost:3000', 'https://frolicking-druid-03eeda.netlify.app/'],
   methods:['POST','GET'], // Replace this with the origin of your frontend application
   credentials: true // Allow credentials (cookies)
 }));
